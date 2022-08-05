@@ -40,7 +40,7 @@ FILENAME_PATTERN = re.compile(r"(?P<date>\d{4}_\d{4}_\d{6})_(?P<part>\d+)(?P<typ
 
 
 def directory_video_sets(directory):
-
+    """Feeds video files from a directory into the FIXME blahblah"""
     working_dir = pathlib.Path(directory)
 
     if not working_dir.is_dir():
@@ -52,7 +52,7 @@ def directory_video_sets(directory):
 
 
 def filename_video_sets(textfile):
-
+    """FIXME Parses a text file of video paths to stitch together"""
     working_file = pathlib.Path(textfile)
 
     if not working_file.is_file():
@@ -67,6 +67,11 @@ def filename_video_sets(textfile):
 
 
 def _generate_video_sets(video_list):
+    """Partitions the video files by parking mode
+
+    Creates a mapping of the start timestamp to the list of video files to
+    stitch together
+    """
     video_sets = {}
 
     # seed search identifiers
@@ -107,6 +112,11 @@ def _generate_video_sets(video_list):
 
 @app.task(name='stitch')
 def _stitch_videos(file_list, output_file):
+    """Stitching task
+
+    This computer has about 12 more cores than I need so I might as well use it
+    for something and run these jobs asynchronously!
+    """
     import ffmpeg
 
     inputs = [ffmpeg.input(file) for file in file_list]
@@ -123,15 +133,15 @@ def _stitch_videos(file_list, output_file):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Stitch together VIOFO A129 dashcam footage')
-    parser.add_argument('input_directory', action='store', help='Path to directory of dashcam videos')
+    parser = argparse.ArgumentParser(description='Stitch together VIOFO A129 dashcam footage partitioned by parking mode')
+    parser.add_argument('input_path', action='store', help='Path to directory of dashcam videos')
     parser.add_argument('output_directory', action='store', help='Name of output directory of stitched videos')
-    parser.add_argument('-d', 'output-path', action='store', default=None, help='Path to parent directory of output (default: ~/videos/)')
-    parser.add_argument('-C', 'check-mode', action='store_true', help='Check mode')
+    parser.add_argument('-d', '--output-path', action='store', default=None, help='Path to parent of output directory (default: ~/videos)')
+    parser.add_argument('-C', '--check-mode', action='store_true', help='Check mode')
 
     args = parser.parse_args()
 
-    video_datas = directory_video_sets(args.input_directory)
+    video_datas = directory_video_sets(args.input_path)
 
     if not args.output_path:
         outdir = pathlib.Path.home().joinpath('videos', args.output_directory)
